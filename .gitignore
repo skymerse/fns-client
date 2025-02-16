@@ -12,3 +12,4 @@
 *.log
 
 templates/fnsClient.conf
+CLIENT_CERT
