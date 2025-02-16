@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  fns-client:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    volumes:
+      - ./config:/app/config
+      - ./certs:/app/certs
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=notamdb
+      - POSTGRES_USER=notam
+      - POSTGRES_PASSWORD=notampass
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17
+    environment:
+      - POSTGRES_DB=notamdb
+      - POSTGRES_USER=notam
+      - POSTGRES_PASSWORD=notampass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8089:8080
+
+volumes:
+  postgres_data:
+  artemis_config:

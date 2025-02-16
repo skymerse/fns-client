@@ -10,3 +10,5 @@
 *.project
 *.factorypath
 *.log
+
+templates/fnsClient.conf
