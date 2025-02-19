@@ -13,3 +13,6 @@
 
 templates/fnsClient.conf
 CLIENT_CERT
+initial_load_aixm.*
+
+.DS_Store
