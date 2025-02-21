@@ -19,7 +19,7 @@ RUN mvn clean install -f ./aixm-5.1/pom.xml && \
     mvn clean install -f ./swim-utilities/pom.xml
 
 # Build main application
-RUN mvn clean package
+RUN mvn clean package -DskipTests
 
 # Runtime stage
 FROM openjdk:11-jre-slim

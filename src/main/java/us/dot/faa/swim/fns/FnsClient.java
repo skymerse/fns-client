@@ -185,8 +185,12 @@ public class FnsClient implements ExceptionListener {
 
 				try {
 
-					notamDb.dropNotamTable();
-					notamDb.createNotamTable();
+					/**
+					 * We want to keep existing entries in the database.
+					 * TODO: Need to figure out to mark REST response as possibly not valid.
+					 */
+					// notamDb.dropNotamTable();
+					// notamDb.createNotamTable();
 
 					logger.info("Initizliaing NotamDb from FIL File");
 
