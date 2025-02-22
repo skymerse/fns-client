@@ -13,7 +13,9 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.AbstractMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -37,7 +39,11 @@ import spark.Response;
 import spark.Spark;
 import spark.http.matching.Halt;
 import spark.HaltException;
+import us.dot.faa.swim.fns.notamdb.NotamBean;
 import us.dot.faa.swim.fns.notamdb.NotamDb;
+import us.dot.faa.swim.fns.rest.data.NotamDTO;
+
+import com.google.gson.Gson;
 
 public class FnsRestApi {
     private static final Logger logger = LoggerFactory.getLogger(FnsRestApi.class);
@@ -54,10 +60,6 @@ public class FnsRestApi {
 
         before((request, response) -> {
             logger.info("Recieved Request at: " + request.url() + " from:" + request.ip());
-            if(!this.notamDb.isValid()){
-                
-                halt(503, "NotamDb State InValid");
-            }
         });
 
         after((request, response) -> {
@@ -150,9 +152,24 @@ public class FnsRestApi {
             long totalTime = endTime - startTime;
             logger.info("Processed rest request for for LocationDesignator:" + locationDesignator + " took:"
                     + TimeUnit.MILLISECONDS.convert(totalTime, TimeUnit.NANOSECONDS) + " ms");
-            
+
             return notamTable.toString();
 
+        });
+
+        get("/location/:id", (req, res) -> {
+            String locationDesignator = req.params(":id");
+
+            List<NotamBean> notams = this.notamDb.getByLocation(locationDesignator);
+
+            ApiListResponse<NotamDTO> response = new ApiListResponse<>(
+                    notams.stream().map(NotamDTO::fromNotamBean).collect(Collectors.toList()));
+            response.setDbValid(this.notamDb.isValid());
+
+            res.status(200);
+            res.type("application/json");
+
+            return new Gson().toJson(response);
         });
 
         get("/locationDesignator/:id", (req, res) -> {
@@ -324,4 +341,19 @@ public class FnsRestApi {
         stop();
     }
 
+    private static class ApiListResponse<T> {
+        private List<T> items;
+        private int total;
+        private boolean isDbValid = true;
+
+        public ApiListResponse(
+                List<T> items) {
+            this.items = items;
+            this.total = items.size();
+        }
+
+        public void setDbValid(boolean isDbValid) {
+            this.isDbValid = isDbValid;
+        }
+    }
 }

@@ -347,6 +347,11 @@ public class FnsClient implements ExceptionListener {
 			notamDb.createNotamTable();
 		}
 
+		if (config.getRestApiIsEnabled()) {
+			logger.info("Starting REST API");
+			fnsRestApi = new FnsRestApi(notamDb, config.getRestApiPort());
+		}
+
 		AbstractMap.SimpleEntry<Long, Instant> lastCorrelationId = notamDb.getLastCorrelationId();
 		if (lastCorrelationId != null && lastCorrelationId.getKey() > 0
 				&& Duration.between(lastCorrelationId.getValue(), Instant.now())
@@ -368,11 +373,6 @@ public class FnsClient implements ExceptionListener {
 
 		} else {
 			logger.info("Recent Correlation Id Imported from NotamDb, skipping initialization");
-		}
-
-		if (config.getRestApiIsEnabled()) {
-			logger.info("Starting REST API");
-			fnsRestApi = new FnsRestApi(notamDb, config.getRestApiPort());
 		}
 
 	}

@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.jdbi.v3.core.Jdbi;
 import org.json.XML;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ public class NotamDb {
 	private NotamDbConfig config;
 	private boolean isValid = false;
 	private boolean isInitializing = false;
+	public final Jdbi jdbi;
 
 	private BasicDataSource notamDbDataSource = new BasicDataSource();
 
@@ -50,6 +52,8 @@ public class NotamDb {
 		notamDbDataSource.setMinIdle(0);
 		notamDbDataSource.setMaxIdle(10);
 		notamDbDataSource.setMaxOpenPreparedStatements(100);
+
+		jdbi = Jdbi.create(notamDbDataSource);
 	}
 
 	public boolean isValid() {
@@ -420,6 +424,15 @@ public class NotamDb {
 		return notamDbDataSource.getConnection();
 	}
 
+	public List<NotamBean> getByLocation(String location) {
+		return jdbi.withHandle(handle -> {
+			return handle.createQuery("SELECT * FROM NOTAMS WHERE locationDesignator = :location")
+					.bind("location", location)
+					.mapToBean(NotamBean.class)
+					.list();
+		});
+	}
+
 	// db lookups
 	public void getByLocationDesignator(String locationDesignator, OutputStream output, boolean asJson)
 			throws SQLException, JAXBException, IOException {
@@ -429,7 +442,7 @@ public class NotamDb {
 		try {
 			selectPreparedStatement = conn.prepareStatement(
 					"select fnsid, aixmNotamMessage from " + this.config.table + " where locationDesignator = ?"
-							+ " AND status = 'ACTIVE' AND (validtotimestamp > NOW() OR validtotimestamp is null)");
+							+ " AND (validtotimestamp > NOW() OR validtotimestamp is null)");
 			selectPreparedStatement.setString(1, locationDesignator);
 
 			writeResponseToSteam(selectPreparedStatement, output, asJson);

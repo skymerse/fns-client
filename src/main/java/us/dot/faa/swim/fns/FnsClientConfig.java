@@ -28,7 +28,7 @@ public class FnsClientConfig {
     protected int filParserWorkQueueSize = 100;
     protected int notamDbBatchInsertSize = 100;
     protected int notamDbInitializationRetryCount = 3;
-    protected boolean removeOldNotams = true;
+    protected boolean removeOldNotams = false;
     protected int removeOldNotamsFrequency = 24;
 
     protected boolean restApiIsEnabled = true;
