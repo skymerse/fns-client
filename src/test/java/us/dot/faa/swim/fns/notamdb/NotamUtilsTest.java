@@ -1,60 +1,15 @@
 package us.dot.faa.swim.fns.notamdb;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.ByteArrayOutputStream;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import javax.xml.bind.JAXBException;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.BeforeAll;
-import us.dot.faa.swim.fns.FnsMessage;
+import java.time.Instant;
+import java.sql.Timestamp;
+import javax.xml.bind.JAXBException;
 import us.dot.faa.swim.fns.FnsMessage.NotamStatus;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class NotamDbTest {
-    private NotamDb notamDb;
-    private NotamDbConfig config = new NotamDbConfig()
-            .setDriver("org.postgresql.Driver")
-            .setConnectionUrl("jdbc:postgresql://localhost:5432/notamdb_test")
-            .setUsername("notam")
-            .setPassword("notampass")
-            .setSchema("public")
-            .setTable("notams");
+import us.dot.faa.swim.fns.FnsMessage;
 
-
-    @BeforeAll
-    public void setUp() throws Exception {
-        notamDb = new NotamDb(config);
-        notamDb.dropNotamTable();
-        notamDb.createNotamTable();
-    }
-
-    @BeforeEach
-    public void setUpEach() throws Exception {
-        try (Connection conn = notamDb.getDBConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("DELETE FROM NOTAMS");
-            stmt.executeUpdate();
-        } catch (Exception e) {
-            throw new Exception("Error deleting NOTAMS", e);
-        }
-    }
-
-    private FnsMessage createFnsMessage() throws JAXBException {
-        return createFnsMessage("<test>Sample AIXM message</test>");
-    }
-
+public class NotamUtilsTest {
     private FnsMessage createFnsMessage(String aixmNotamMessage) throws JAXBException {
         int fnsId = 12345;
         long correlationId = 67890L;
@@ -89,51 +44,8 @@ public class NotamDbTest {
     }
 
     @Test
-    public void testInitialization() throws Exception {
-        assertTrue(notamDb.notamTableExists(), "NotamDb should exist");
-        assertFalse(notamDb.isValid(), "NotamDb should not be valid initially");
-        assertFalse(notamDb.isInitializing(), "NotamDb should not be initializing");
-    }
-
-    @Test
-    public void testPutNotam() throws Exception {
-        // Create test data
-        FnsMessage testNotam = createFnsMessage();
-
-        // Put the NOTAM in the database
-        NotamBean notam = notamDb.putNotamJdbi(testNotam);
-
-        // Verify the NOTAM was stored by checking if it exists
-        try (Connection conn = notamDb.getDBConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM NOTAMS WHERE fnsid = ?");
-            stmt.setLong(1, testNotam.getFNS_ID());
-            ResultSet rs = stmt.executeQuery();
-
-            assertTrue(rs.next(), "NOTAM should exist in database");
-            assertEquals(testNotam.getFNS_ID(), rs.getLong("fnsid"));
-            assertEquals(testNotam.getCorrelationId(), rs.getLong("correlationId"));
-            assertEquals(testNotam.getClassification(), rs.getString("classification"));
-            assertEquals(testNotam.getLocationDesignator(), rs.getString("locationDesignator"));
-            assertEquals(testNotam.getNotamAccountability(), rs.getString("notamAccountability"));
-            assertEquals(testNotam.getNotamText(), rs.getString("notamText"));
-            assertEquals(testNotam.getStatus().toString(), rs.getString("status"));
-            assertFalse(rs.next(), "Should only be one matching NOTAM");
-        }
-    }
-
-    @Test
-    public void testPutNotam_duplicate() throws Exception {
-        FnsMessage testNotam = createFnsMessage();
-
-        notamDb.putNotamJdbi(testNotam);
-        notamDb.putNotamJdbi(testNotam);
-
-        List<NotamBean> notams = notamDb.getAll();
-        assertEquals(1, notams.size());
-    }
-
-    @Test
-    public void testPutNotam_icaoParse() throws Exception {
+    public void testExtractIcaoLocation_dom() throws JAXBException {
+        // Create FnsMessage with test NOTAM
         String aixmNotamMessage = "<ns13:AIXMBasicMessage ns5:id=\"FNS_ID_75742039\" xmlns:ns1=\"http://www.opengis.net/ows/1.1\" " +
             "xmlns:ns10=\"http://www.isotc211.org/2005/gts\" xmlns:ns11=\"http://www.aixm.aero/schema/5.1/event\" " +
             "xmlns:ns12=\"urn:us.gov.dot.faa.aim.fns\" xmlns:ns13=\"http://www.aixm.aero/schema/5.1/message\" " +
@@ -272,15 +184,53 @@ public class NotamDbTest {
             "</ns13:AIXMBasicMessage>";
 
         FnsMessage testNotam = createFnsMessage(aixmNotamMessage);
-
-        NotamBean notam = notamDb.putNotamJdbi(testNotam);
-
-        // Get the last NOTAM from database
-        List<NotamBean> notams = notamDb.getAll();
         
-        // Verify the NOTAM was retrieved correctly
-        assertNotNull(notam);
-        assertEquals(1, notams.size());
-        assertEquals("KLAX", notam.getIcaoLocation());
+        // Test the extraction
+        String result = NotamUtils.extractIcaoLocation(testNotam);
+        
+        // Verify result
+        assertEquals("KLAX", result);
     }
+
+    @Test
+    public void testExtractIcaoLocation_intl() throws JAXBException {
+        // Create FnsMessage with test NOTAM
+        String aixmNotamMessage = "<ns13:AIXMBasicMessage ns5:id=\"FNS_ID_75669606\" xmlns:ns1=\"http://www.opengis.net/ows/1.1\" " +
+            "xmlns:ns10=\"http://www.isotc211.org/2005/gts\" xmlns:ns11=\"http://www.aixm.aero/schema/5.1/event\" " +
+            "xmlns:ns12=\"urn:us.gov.dot.faa.aim.fns\" xmlns:ns13=\"http://www.aixm.aero/schema/5.1/message\" " +
+            "xmlns:ns14=\"http://www.opengis.net/wfs-util/2.0\" xmlns:ns2=\"http://www.w3.org/1999/xlink\" " +
+            "xmlns:ns3=\"http://www.opengis.net/wfs/2.0\" xmlns:ns4=\"http://www.opengis.net/fes/2.0\" " +
+            "xmlns:ns5=\"http://www.opengis.net/gml/3.2\" xmlns:ns6=\"http://www.aixm.aero/schema/5.1/extensions/FAA/FNSE\" " +
+            "xmlns:ns7=\"http://www.isotc211.org/2005/gco\" xmlns:ns8=\"http://www.isotc211.org/2005/gmd\" " +
+            "xmlns:ns9=\"http://www.aixm.aero/schema/5.1\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+            "<ns5:boundedBy xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:nil=\"true\"></ns5:boundedBy>" +
+            "<ns13:hasMember><ns11:Event ns5:id=\"Event_1_75669606\">" +
+            "<ns5:boundedBy xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:nil=\"true\"></ns5:boundedBy>" +
+            "<ns11:timeSlice><ns11:EventTimeSlice ns5:id=\"Event_TS_1_75669606\"><ns5:validTime>" +
+            "<ns5:TimePeriod ns5:id=\"Event_TS_TP_1_75669606\">" +
+            "<ns5:beginPosition>2025-02-18T13:52:00.000Z</ns5:beginPosition>" +
+            "<ns5:endPosition>2025-02-21T13:52:00.000Z</ns5:endPosition></ns5:TimePeriod></ns5:validTime>" +
+            "<ns9:interpretation>BASELINE</ns9:interpretation><ns11:scenario>6000</ns11:scenario><ns11:textNOTAM>" +
+            "<ns11:NOTAM ns5:id=\"NOTAM_1_75669606\"><ns11:series>A</ns11:series><ns11:number>776</ns11:number>" +
+            "<ns11:year>2025</ns11:year><ns11:type>C</ns11:type><ns11:issued>2025-02-18T13:52:00.000Z</ns11:issued>" +
+            "<ns11:affectedFIR>KZLA</ns11:affectedFIR><ns11:selectionCode>QLAXX</ns11:selectionCode>" +
+            "<ns11:minimumFL>000</ns11:minimumFL><ns11:maximumFL>999</ns11:maximumFL><ns11:location>LAX</ns11:location>" +
+            "<ns11:effectiveStart>202502181352</ns11:effectiveStart><ns11:effectiveEnd>202502211352</ns11:effectiveEnd>" +
+            "<ns11:text>A0776/25 NOTAMC A0636/25 \nQ) KZLA/QLAXX////000/999/ \nA) KLAX\nB) 2502181352\n" +
+            "E)  LAX RWY 06R ALS U/S\nCANCELED</ns11:text></ns11:NOTAM></ns11:textNOTAM><ns11:extension>" +
+            "<ns6:EventExtension ns5:id=\"ext_01_75669606\"><ns6:classification>INTL</ns6:classification>" +
+            "<ns6:accountId>KLAX</ns6:accountId><ns6:airportname>LOS ANGELES INTL</ns6:airportname>" +
+            "<ns6:originID>KLAX</ns6:originID><ns6:lastUpdated>2025-02-18T13:52:00.000Z</ns6:lastUpdated>" +
+            "<ns6:icaoLocation>KLAX</ns6:icaoLocation></ns6:EventExtension></ns11:extension></ns11:EventTimeSlice>" +
+            "</ns11:timeSlice></ns11:Event></ns13:hasMember></ns13:AIXMBasicMessage>";
+
+        FnsMessage testNotam = createFnsMessage(aixmNotamMessage);
+        
+        // Test the extraction
+        String result = NotamUtils.extractIcaoLocation(testNotam);
+        
+        // Verify result
+        assertEquals("KLAX", result);
+    }
+    
 } 

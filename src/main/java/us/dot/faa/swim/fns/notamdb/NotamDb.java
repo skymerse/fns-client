@@ -135,7 +135,7 @@ public class NotamDb {
 	public void dropNotamTable() throws SQLException {
 		final Connection conn = getDBConnection();
 
-		try {			
+		try {
 			if (notamTableExists()) {
 				logger.info("Dropping NOTAMS Table");
 				final String dropQuery = "DROP TABLE " + this.config.table;
@@ -174,7 +174,7 @@ public class NotamDb {
 						+ "correlationId bigint, issuedTimestamp timestamp, storedTimeStamp timestamp, "
 						+ "updatedTimestamp timestamp, validFromTimestamp timestamp, validToTimestamp timestamp, "
 						+ "classification varchar(4), locationDesignator varchar(12), notamAccountability varchar(12), "
-						+ "notamText text, aixmNotamMessage xml, status varchar(12))";
+						+ "notamText text, aixmNotamMessage xml, status varchar(12), icaoLocation varchar(4))";
 				conn.prepareStatement(createQuery).execute();
 
 				// final String createDesignatorIndex = "CREATE INDEX index_locationDesignator ON " + this.config.table
@@ -424,6 +424,14 @@ public class NotamDb {
 		return notamDbDataSource.getConnection();
 	}
 
+	public List<NotamBean> getAll() {
+		return jdbi.withHandle(handle -> {
+			return handle.createQuery("SELECT * FROM NOTAMS")
+					.mapToBean(NotamBean.class)
+					.list();
+		});
+	}
+
 	public List<NotamBean> getByLocation(String location) {
 		return jdbi.withHandle(handle -> {
 			return handle.createQuery("SELECT * FROM NOTAMS WHERE locationDesignator = :location")
@@ -597,6 +605,73 @@ public class NotamDb {
 		}
 
 		return validationMap;
+	}
+
+	public NotamBean putNotamJdbi(FnsMessage fnsMessage) throws SQLException {
+		return jdbi.withHandle(handle -> {
+			// Check if NOTAM should be updated
+			if (!this.isInitializing && !checkIfNotamIsNewer(fnsMessage)) {
+				logger.debug("NOTAM with FNS_ID:" + fnsMessage.getFNS_ID() + 
+					" and CorrelationId: " + fnsMessage.getCorrelationId() + 
+					" and LastUpdateTime: " + fnsMessage.getUpdatedTimestamp().toString() +
+					" discarded due to Notam in database has newer LastUpdateTime");
+				return handle.createQuery("SELECT * FROM " + config.table + " WHERE fnsid = :fnsid")
+					.bind("fnsid", fnsMessage.getFNS_ID())
+					.mapToBean(NotamBean.class)
+					.findOne()
+					.orElse(null); // TODO: throw exception or return Optional
+			}
+
+
+
+			// Create SQLXML object for aixmNotamMessage
+			SQLXML sqlXml = handle.getConnection().createSQLXML();
+			sqlXml.setString(fnsMessage.getAixmNotamMessage());
+
+			String sql = "INSERT INTO " + config.table +
+				" (fnsid, correlationId, issuedTimestamp, storedTimeStamp, updatedTimestamp, " +
+				"validFromTimestamp, validToTimestamp, classification, locationDesignator, " +
+				"notamAccountability, notamText, aixmNotamMessage, status, icaoLocation) " +
+				"VALUES (:fnsid, :correlationId, :issuedTimestamp, :storedTimeStamp, :updatedTimestamp, " +
+				":validFromTimestamp, :validToTimestamp, :classification, :locationDesignator, " +
+				":notamAccountability, :notamText, :aixmNotamMessage, :status, :icaoLocation) " +
+				"ON CONFLICT (fnsid) DO UPDATE SET " +
+				"correlationId = :correlationId, " +
+				"updatedTimestamp = :updatedTimestamp, " +
+				"validFromTimestamp = :validFromTimestamp, " +
+				"validToTimestamp = :validToTimestamp, " +
+				"classification = :classification, " +
+				"locationDesignator = :locationDesignator, " +
+				"notamAccountability = :notamAccountability, " +
+				"notamText = :notamText, " +
+				"aixmNotamMessage = :aixmNotamMessage, " +
+				"status = :status, " +
+				"icaoLocation = :icaoLocation";
+
+			handle.createUpdate(sql)
+				.bind("fnsid", fnsMessage.getFNS_ID())
+				.bind("correlationId", fnsMessage.getCorrelationId())
+				.bind("issuedTimestamp", fnsMessage.getIssuedTimestamp())
+				.bind("storedTimeStamp", new Timestamp(System.currentTimeMillis()))
+				.bind("updatedTimestamp", fnsMessage.getUpdatedTimestamp())
+				.bind("validFromTimestamp", fnsMessage.getValidFromTimestamp())
+				.bind("validToTimestamp", fnsMessage.getValidToTimestamp())
+				.bind("classification", fnsMessage.getClassification())
+				.bind("locationDesignator", fnsMessage.getLocationDesignator())
+				.bind("notamAccountability", fnsMessage.getNotamAccountability())
+				.bind("notamText", fnsMessage.getNotamText())
+				.bindBySqlType("aixmNotamMessage", sqlXml, java.sql.Types.SQLXML)
+				.bind("status", fnsMessage.getStatus().toString())
+				.bind("icaoLocation", NotamUtils.extractIcaoLocation(fnsMessage))
+				.execute();
+
+			sqlXml.free();
+
+			return handle.createQuery("SELECT * FROM " + config.table + " WHERE fnsid = :fnsid")
+				.bind("fnsid", fnsMessage.getFNS_ID())
+				.mapToBean(NotamBean.class)
+				.one();
+		});
 	}
 
 }

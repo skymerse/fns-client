@@ -157,7 +157,7 @@ public class FnsRestApi {
 
         });
 
-        get("/location/:id", (req, res) -> {
+        get("/v2/location/:id", (req, res) -> {
             String locationDesignator = req.params(":id");
 
             List<NotamBean> notams = this.notamDb.getByLocation(locationDesignator);

@@ -6,7 +6,6 @@ import java.sql.Timestamp;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.JAXBIntrospector;
-import javax.xml.bind.Unmarshaller;
 
 import aero.aixm.message.AIXMBasicMessageType;
 
@@ -25,6 +24,7 @@ public class NotamBean {
     private String aixmnotammessage;
     private String status;
     private AIXMBasicMessageType aixmNotamMessageObject;
+    private String icaoLocation;
 
     // Default constructor
     public NotamBean() {
@@ -157,5 +157,13 @@ public class NotamBean {
 
         this.aixmNotamMessageObject = fnsAixmMessageType;
         return fnsAixmMessageType;
+    }
+
+    public String getIcaoLocation() {
+        return icaoLocation;
+    }
+
+    public void setIcaoLocation(String icaoLocation) {
+        this.icaoLocation = icaoLocation;
     }
 }
