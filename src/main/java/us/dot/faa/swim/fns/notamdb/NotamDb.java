@@ -195,45 +195,11 @@ public class NotamDb {
 	}
 
 	public void putNotam(final FnsMessage fnsMessage) throws SQLException {
-		Connection conn = null;
 		try {
-			conn = getDBConnection();
-			putNotam(conn, fnsMessage);
-
+			putNotamJdbi(fnsMessage);
 		} catch (SQLException e) {
 			isValid = false;
 			throw e;
-		} finally {
-			try {
-				if (conn != null) {
-					conn.close();
-				}
-			} catch (SQLException sqle) {
-				logger.error(sqle.getMessage(), sqle);
-			}
-		}
-	}
-
-	public void putNotam(final Connection conn, final FnsMessage fnsMessage) throws SQLException {
-		PreparedStatement putNotamPreparedStatement = null;
-		try {
-			if (!this.isInitializing && !checkIfNotamIsNewer(fnsMessage)) {
-				logger.debug("NOTAM with FNS_ID:" + fnsMessage.getFNS_ID() + " and CorrelationId: "
-						+ fnsMessage.getCorrelationId() + " and LastUpdateTime: "
-						+ fnsMessage.getUpdatedTimestamp().toString()
-						+ " discarded due to Notam in database has newer LastUpdateTime");
-				return;
-			}
-
-			putNotamPreparedStatement = createPutNotamPreparedStatement(conn);
-			populatePutNotamPreparedStatement(putNotamPreparedStatement, fnsMessage);
-			putNotamPreparedStatement.executeUpdate();
-		} catch (SQLException e) {
-			throw e;
-		} finally {
-			if (putNotamPreparedStatement != null) {
-				putNotamPreparedStatement.close();
-			}
 		}
 	}
 
@@ -619,10 +585,8 @@ public class NotamDb {
 					.bind("fnsid", fnsMessage.getFNS_ID())
 					.mapToBean(NotamBean.class)
 					.findOne()
-					.orElse(null); // TODO: throw exception or return Optional
+					.orElseThrow();
 			}
-
-
 
 			// Create SQLXML object for aixmNotamMessage
 			SQLXML sqlXml = handle.getConnection().createSQLXML();
