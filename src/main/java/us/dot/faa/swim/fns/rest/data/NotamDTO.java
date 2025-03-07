@@ -1,6 +1,8 @@
 package us.dot.faa.swim.fns.rest.data;
 
 import us.dot.faa.swim.fns.notamdb.NotamBean;
+import us.dot.faa.swim.fns.notamdb.NotamUtils;
+
 import org.json.JSONObject;
 import org.json.XML;
 
@@ -12,6 +14,7 @@ public class NotamDTO {
     private String location;
     private transient String aixmNotamMessage;
     private JSONObject aixmJson;
+    private String icaoMessage;
 
     private NotamDTO() {}
 
@@ -25,6 +28,14 @@ public class NotamDTO {
 
     public String getStatus() {
         return status;
+    }
+
+    public String getIcaoMessage() {
+        return icaoMessage;
+    }
+
+    public void setIcaoMessage(String icaoMessage) {
+        this.icaoMessage = icaoMessage;
     }
 
     public String getLocation() {
@@ -91,6 +102,8 @@ public class NotamDTO {
             if (notamDTO.aixmNotamMessage != null) {
                 JSONObject json = XML.toJSONObject(notamDTO.aixmNotamMessage);
                 notamDTO.aixmJson = json;
+
+                notamDTO.icaoMessage = NotamUtils.extractIcaoMessage(notamDTO.aixmNotamMessage);
             }
 
 

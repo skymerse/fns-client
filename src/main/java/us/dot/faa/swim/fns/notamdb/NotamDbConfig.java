@@ -7,7 +7,7 @@ public class NotamDbConfig {
     protected String username = "";
     protected String password = "";
     protected String schema = "PUBLIC";
-    protected String table = "NOTAMS";    
+    protected String table = "fns_notams";    
 
     public String getDriver() {
         return this.driver;
@@ -59,7 +59,7 @@ public class NotamDbConfig {
     }
 
     public NotamDbConfig setTable(String table) {
-        this.table = table;
+        // this.table = table;
         return this;
     }
 

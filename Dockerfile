@@ -34,7 +34,8 @@ WORKDIR /app
 # Copy built application from builder stage
 COPY --from=builder /build/target /app
 
-COPY --from=builder /build/templates/fnsClient.conf /app/fns-client/fnsClient.conf
+ARG CONFIG_FILE=fnsClient.conf
+COPY --from=builder /build/templates/${CONFIG_FILE} /app/fns-client/fnsClient.conf
 COPY --from=builder /build/CLIENT_CERT /app/fns-client/CLIENT_CERT
 
 RUN mkdir -p /app/fil

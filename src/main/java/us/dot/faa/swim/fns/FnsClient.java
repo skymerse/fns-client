@@ -342,10 +342,7 @@ public class FnsClient implements ExceptionListener {
 
 		logger.info("Starting FnsClient");
 
-		boolean notamTableExists = notamDb.notamTableExists();
-		if (!notamTableExists) {
-			notamDb.createNotamTable();
-		}
+		notamDb.createNotamTable();
 
 		if (config.getRestApiIsEnabled()) {
 			logger.info("Starting REST API");

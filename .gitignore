@@ -12,6 +12,7 @@
 *.log
 
 templates/fnsClient.conf
+templates/fnsClient.prod.conf
 CLIENT_CERT
 initial_load_aixm.*
 
