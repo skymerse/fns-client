@@ -25,6 +25,10 @@ public class NotamBean {
     private String status;
     private AIXMBasicMessageType aixmNotamMessageObject;
     private String icaoLocation;
+    private String notamSeries;
+    private long notamNumber;
+    private String notamYear;
+    private String icaoMessage;
 
     // Default constructor
     public NotamBean() {
@@ -133,6 +137,38 @@ public class NotamBean {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getNotamSeries() {
+        return notamSeries;
+    }
+
+    public void setNotamSeries(String notamSeries) {
+        this.notamSeries = notamSeries;
+    }
+
+    public long getNotamNumber() {
+        return notamNumber;
+    }
+
+    public void setNotamNumber(long notamNumber) {
+        this.notamNumber = notamNumber;
+    }
+
+    public String getNotamYear() {
+        return notamYear;
+    }
+
+    public void setNotamYear(String notamYear) {
+        this.notamYear = notamYear;
+    }
+
+    public String getIcaoMessage() {
+        return icaoMessage;
+    }
+
+    public void setIcaoMessage(String icaoMessage) {
+        this.icaoMessage = icaoMessage;
     }
 
     public AIXMBasicMessageType getAixmNotamMessageObject() throws JAXBException {

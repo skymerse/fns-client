@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+import javax.xml.bind.Element;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.JAXBIntrospector;
-import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
@@ -41,10 +41,14 @@ public class FnsMessage {
 	private Timestamp validToTimestamp;
 	private String classification;
 	private String locationDesignator;
+	private String notamSeries;
+	private long notamNumber;
+	private String notamYear;
 	private String notamAccountability;
 	private String notamText;
 	private String aixmNotamMessage;
 	private String icaoLocation;
+	private String icaoMessage;
 
 	public enum NotamStatus {
 		ACTIVE, CANCELLED, EXPIRED
@@ -122,7 +126,38 @@ public class FnsMessage {
 							this.validToTimestamp = null;
 						}
 
-						this.icaoLocation = eventExtension.getIcaoLocation().getValue().getValue();
+						if (eventExtension.getIcaoLocation() != null) {
+							this.icaoLocation = eventExtension.getIcaoLocation().getValue().getValue();
+						}
+
+						if (notam.getSeries() != null) {
+							this.notamSeries = notam.getSeries().getValue().getValue();
+						}
+
+						if (notam.getNumber() != null) {
+							this.notamNumber = notam.getNumber().getValue().getValue();
+						}
+
+						if (notam.getYear() != null) {
+							this.notamYear = notam.getYear().getValue().getValue();
+						}
+
+						if (notam.getTranslation() != null) {
+							notam.getTranslation().stream()
+							.filter(notamTranslation -> notamTranslation.getNOTAMTranslation().getType().getValue().getValue().equals("OTHER:ICAO"))
+							.findFirst().ifPresent((notamTranslation) -> {
+								if (notamTranslation.getNOTAMTranslation().getFormattedText() != null) {
+									this.icaoMessage = notamTranslation.getNOTAMTranslation().getFormattedText().getValue().getAny().stream()
+										.map((el) -> el.getTextContent())
+										.collect(Collectors.joining("\n"))
+										.trim()
+										.replaceFirst("^&lt;pre&gt;", "")
+										.replaceFirst("^<pre>", "")
+										.replaceFirst("&lt;/pre&gt;$", "")
+										.replaceFirst("</pre>$", "");
+								}
+							});
+						}
 					}
 				}
 
@@ -231,6 +266,22 @@ public class FnsMessage {
 
 	public String getIcaoLocation() {
 		return this.icaoLocation;
+	}
+
+	public String getNotamSeries() {
+		return this.notamSeries;
+	}
+
+	public long getNotamNumber() {
+		return this.notamNumber;
+	}
+
+	public String getNotamYear() {
+		return this.notamYear;
+	}
+
+	public String getIcaoMessage() {
+		return this.icaoMessage;
 	}
 
 	// setters

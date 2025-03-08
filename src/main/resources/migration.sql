@@ -101,4 +101,28 @@ BEGIN
                   WHERE table_name = 'fns_notams' AND constraint_name = 'fns_notams_pkey') THEN
         ALTER TABLE fns_notams ADD PRIMARY KEY (fnsid);
     END IF;
+
+    -- Add notamSeries if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                  WHERE table_name = 'fns_notams' AND column_name = 'notam_series') THEN
+        ALTER TABLE fns_notams ADD COLUMN notam_series varchar(12);
+    END IF;
+
+    -- Add notamNumber if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                  WHERE table_name = 'fns_notams' AND column_name = 'notam_number') THEN
+        ALTER TABLE fns_notams ADD COLUMN notam_number bigint;
+    END IF;
+
+    -- Add notamYear if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                  WHERE table_name = 'fns_notams' AND column_name = 'notam_year') THEN
+        ALTER TABLE fns_notams ADD COLUMN notam_year varchar(4);
+    END IF;
+    
+    -- Add icaoMessage if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                  WHERE table_name = 'fns_notams' AND column_name = 'icao_message') THEN
+        ALTER TABLE fns_notams ADD COLUMN icao_message text;
+    END IF;
 END $$;

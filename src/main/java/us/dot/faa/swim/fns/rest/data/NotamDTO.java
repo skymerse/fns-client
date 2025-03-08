@@ -3,8 +3,7 @@ package us.dot.faa.swim.fns.rest.data;
 import us.dot.faa.swim.fns.notamdb.NotamBean;
 import us.dot.faa.swim.fns.notamdb.NotamUtils;
 
-import org.json.JSONObject;
-import org.json.XML;
+import com.google.gson.annotations.SerializedName;
 
 
 
@@ -12,9 +11,17 @@ public class NotamDTO {
     private String message;
     private String status;
     private String location;
+    @SerializedName("icao_location")
+    private String icaoLocation;
     private transient String aixmNotamMessage;
-    private JSONObject aixmJson;
     private String icaoMessage;
+    @SerializedName("notam_series")
+    private String notamSeries;
+    @SerializedName("notam_number")
+    private long notamNumber;
+    @SerializedName("notam_year")
+    private String notamYear;
+    private String classification;
 
     private NotamDTO() {}
 
@@ -42,6 +49,38 @@ public class NotamDTO {
         return location;
     }
 
+    public String getIcaoLocation() {
+        return icaoLocation;
+    }
+
+    public void setIcaoLocation(String icaoLocation) {
+        this.icaoLocation = icaoLocation;
+    }
+
+    public String getNotamSeries() {
+        return notamSeries;
+    }
+
+    public long getNotamNumber() {
+        return notamNumber;
+    }
+
+    public String getNotamYear() {
+        return notamYear;
+    }
+
+    public void setNotamYear(String notamYear) {
+        this.notamYear = notamYear;
+    }
+
+    public void setNotamSeries(String notamSeries) {
+        this.notamSeries = notamSeries;
+    }
+
+    public void setNotamNumber(long notamNumber) {
+        this.notamNumber = notamNumber;
+    }
+
     public String getAixmNotamMessage() {
         return aixmNotamMessage;
     }
@@ -62,11 +101,23 @@ public class NotamDTO {
         this.aixmNotamMessage = aixmNotamMessage;
     }
 
+    public String getClassification() {
+        return classification;
+    }
+
+    public void setClassification(String classification) {
+        this.classification = classification;
+    }
+
     public static NotamDTO fromNotamBean(NotamBean notamBean) {
         return NotamDTO.builder()
                 .message(notamBean.getNotamtext())
                 .status(notamBean.getStatus())
                 .location(notamBean.getLocationdesignator())
+                .icaoLocation(notamBean.getIcaoLocation())
+                .notamSeries(notamBean.getNotamSeries())
+                .notamNumber(notamBean.getNotamNumber())
+                .notamYear(notamBean.getNotamYear())
                 .aixmNotamMessage(notamBean.getAixmnotammessage())
                 .build();
     }
@@ -93,6 +144,26 @@ public class NotamDTO {
             return this;
         }
 
+        public Builder icaoLocation(String icaoLocation) {
+            notamDTO.setIcaoLocation(icaoLocation);
+            return this;
+        }
+
+        public Builder notamSeries(String notamSeries) {
+            notamDTO.setNotamSeries(notamSeries);
+            return this;
+        }
+
+        public Builder notamNumber(long notamNumber) {
+            notamDTO.setNotamNumber(notamNumber);
+            return this;
+        }
+
+        public Builder notamYear(String notamYear) {
+            notamDTO.setNotamYear(notamYear);
+            return this;
+        }
+
         public Builder aixmNotamMessage(String aixmNotamMessage) {
             notamDTO.setAixmNotamMessage(aixmNotamMessage);
             return this;
@@ -100,12 +171,9 @@ public class NotamDTO {
 
         public NotamDTO build() {
             if (notamDTO.aixmNotamMessage != null) {
-                JSONObject json = XML.toJSONObject(notamDTO.aixmNotamMessage);
-                notamDTO.aixmJson = json;
-
+                // TODO(pasierb): Extract it in FnsMessage
                 notamDTO.icaoMessage = NotamUtils.extractIcaoMessage(notamDTO.aixmNotamMessage);
             }
-
 
             return notamDTO;
         }

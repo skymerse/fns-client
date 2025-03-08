@@ -557,10 +557,10 @@ public class NotamDb {
 			String sql = "INSERT INTO " + config.table +
 				" (fnsid, correlationid, issuedtimestamp, storedtimestamp, updatedtimestamp, " +
 				"validfromtimestamp, validtotimestamp, classification, locationdesignator, " +
-				"notamaccountability, notamtext, aixmnotammessage, status, icaolocation) " +
+				"notamaccountability, notamtext, aixmnotammessage, status, icaolocation, notam_series, notam_number, notam_year, icao_message) " +
 				"VALUES (:fnsid, :correlationid, :issuedtimestamp, :storedtimestamp, :updatedtimestamp, " +
 				":validfromtimestamp, :validtotimestamp, :classification, :locationdesignator, " +
-				":notamaccountability, :notamtext, :aixmnotammessage, :status, :icaolocation) " +
+				":notamaccountability, :notamtext, :aixmnotammessage, :status, :icaolocation, :notam_series, :notam_number, :notam_year, :icao_message) " +
 				"ON CONFLICT (fnsid) DO UPDATE SET " +
 				"correlationid = :correlationid, " +
 				"updatedtimestamp = :updatedtimestamp, " +
@@ -572,7 +572,11 @@ public class NotamDb {
 				"notamtext = :notamtext, " +
 				"aixmnotammessage = :aixmnotammessage, " +
 				"status = :status, " +
-				"icaolocation = :icaolocation";
+				"icaolocation = :icaolocation, " +
+				"notam_series = :notam_series, " +
+				"notam_number = :notam_number, " +
+				"notam_year = :notam_year, " +
+				"icao_message = :icao_message";
 
 			handle.createUpdate(sql)
 				.bind("fnsid", fnsMessage.getFNS_ID())
@@ -589,6 +593,10 @@ public class NotamDb {
 				.bindBySqlType("aixmnotammessage", sqlXml, java.sql.Types.SQLXML)
 				.bind("status", fnsMessage.getStatus().toString())
 				.bind("icaolocation", fnsMessage.getIcaoLocation())
+				.bind("notam_series", fnsMessage.getNotamSeries())
+				.bind("notam_number", fnsMessage.getNotamNumber())
+				.bind("notam_year", fnsMessage.getNotamYear())
+				.bind("icao_message", fnsMessage.getIcaoMessage())
 				.execute();
 
 			sqlXml.free();

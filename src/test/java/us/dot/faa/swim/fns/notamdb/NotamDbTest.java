@@ -261,8 +261,8 @@ public class NotamDbTest {
             "xmlns:gml=\"http://www.opengis.net/gml/3.2\" xmlns:gsr=\"http://www.isotc211.org/2005/gsr\" " +
             "xmlns:gss=\"http://www.isotc211.org/2005/gss\" xmlns:gts=\"http://www.isotc211.org/2005/gts\" " +
             "xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
-            "02/220 NOTAMN \nQ) KZLA/QLIAS/IV/BO/A/000/999/3356N11824W005 \nA) KLAX \nB) 2502260600 \nC) 2502261300 \n" +
-            "E) RWY 07L/25R RWY STATUS LGT SYSTEM \n U/S</html:div></ns11:formattedText></ns11:NOTAMTranslation>" +
+            "&lt;pre&gt;02/220 NOTAMN \nQ) KZLA/QLIAS/IV/BO/A/000/999/3356N11824W005 \nA) KLAX \nB) 2502260600 \nC) 2502261300 \n" +
+            "E) RWY 07L/25R RWY STATUS LGT SYSTEM \n U/S&lt;/pre&gt;</html:div></ns11:formattedText></ns11:NOTAMTranslation>" +
             "</ns11:translation></ns11:NOTAM></ns11:textNOTAM><ns11:extension>" +
             "<ns6:EventExtension ns5:id=\"ext_01_75742039\"><ns6:classification>DOM</ns6:classification>" +
             "<ns6:accountId>LAX</ns6:accountId><ns6:xoveraccountID>KLAX</ns6:xoveraccountID>" +
@@ -284,5 +284,7 @@ public class NotamDbTest {
         assertNotNull(notam);
         assertEquals(1, notams.size());
         assertEquals("KLAX", notam.getIcaoLocation());
+        assertEquals("02/220 NOTAMN \nQ) KZLA/QLIAS/IV/BO/A/000/999/3356N11824W005 \nA) KLAX \nB) 2502260600 \nC) 2502261300 \n" +
+            "E) RWY 07L/25R RWY STATUS LGT SYSTEM \n U/S", notam.getIcaoMessage());
     }
 } 
