@@ -44,7 +44,7 @@ public class NotamDbTest {
     @BeforeEach
     public void setUpEach() throws Exception {
         try (Connection conn = notamDb.getDBConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("DELETE FROM NOTAMS");
+            PreparedStatement stmt = conn.prepareStatement("DELETE FROM fns_notams");
             stmt.executeUpdate();
         } catch (Exception e) {
             throw new Exception("Error deleting NOTAMS", e);
@@ -105,7 +105,7 @@ public class NotamDbTest {
 
         // Verify the NOTAM was stored by checking if it exists
         try (Connection conn = notamDb.getDBConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM NOTAMS WHERE fnsid = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM fns_notams WHERE fnsid = ?");
             stmt.setLong(1, testNotam.getFNS_ID());
             ResultSet rs = stmt.executeQuery();
 
@@ -271,7 +271,9 @@ public class NotamDbTest {
             "</ns6:EventExtension></ns11:extension></ns11:EventTimeSlice></ns11:timeSlice></ns11:Event></ns13:hasMember>" +
             "</ns13:AIXMBasicMessage>";
 
-        FnsMessage testNotam = createFnsMessage(aixmNotamMessage);
+        // FnsMessage testNotam = createFnsMessage(aixmNotamMessage);
+        FnsMessage testNotam = new FnsMessage(-1l, aixmNotamMessage);
+        testNotam.setStatus(FnsMessage.NotamStatus.ACTIVE);
 
         NotamBean notam = notamDb.putNotamJdbi(testNotam);
 

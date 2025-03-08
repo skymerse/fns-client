@@ -588,7 +588,7 @@ public class NotamDb {
 				.bind("notamtext", fnsMessage.getNotamText())
 				.bindBySqlType("aixmnotammessage", sqlXml, java.sql.Types.SQLXML)
 				.bind("status", fnsMessage.getStatus().toString())
-				.bind("icaolocation", NotamUtils.extractIcaoLocation(fnsMessage))
+				.bind("icaolocation", fnsMessage.getIcaoLocation())
 				.execute();
 
 			sqlXml.free();

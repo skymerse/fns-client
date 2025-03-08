@@ -44,6 +44,7 @@ public class FnsMessage {
 	private String notamAccountability;
 	private String notamText;
 	private String aixmNotamMessage;
+	private String icaoLocation;
 
 	public enum NotamStatus {
 		ACTIVE, CANCELLED, EXPIRED
@@ -120,6 +121,8 @@ public class FnsMessage {
 								&& notam.getEffectiveEnd().getValue().getValue().contains("EST")) {
 							this.validToTimestamp = null;
 						}
+
+						this.icaoLocation = eventExtension.getIcaoLocation().getValue().getValue();
 					}
 				}
 
@@ -224,6 +227,10 @@ public class FnsMessage {
 
 	public NotamStatus getStatus() {
 		return this.status;
+	}
+
+	public String getIcaoLocation() {
+		return this.icaoLocation;
 	}
 
 	// setters
