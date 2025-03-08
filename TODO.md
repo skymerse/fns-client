@@ -8,3 +8,4 @@
 4. [ ] Add terraform definition and ensure 0 downtime deployments
    1. [ ] Deploy to separate database
 5. [ ] Cleanup database name setting
+6. [ ] Update README to reflect current state
