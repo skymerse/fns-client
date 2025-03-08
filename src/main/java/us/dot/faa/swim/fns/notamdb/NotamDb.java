@@ -108,7 +108,7 @@ public class NotamDb {
 
 	public AbstractMap.SimpleEntry<Long, Instant> getLastCorrelationId() throws SQLException {
 		return jdbi.withHandle(handle -> {
-			return handle.createQuery("SELECT storedtimestamp, correlationid FROM NOTAMS ORDER BY correlationid DESC LIMIT 1")
+			return handle.createQuery("SELECT storedtimestamp, correlationid FROM fns_notams ORDER BY correlationid DESC LIMIT 1")
 				.map((rs, ctx) -> {
 					if (rs.next()) {
 						return new AbstractMap.SimpleEntry<Long, Instant>(
@@ -302,7 +302,7 @@ public class NotamDb {
 					+ fnsMessage.getUpdatedTimestamp().toString());
 
 			checkIfNotamIsNewerPreparedStatement = conn
-					.prepareStatement("SELECT updatedtimestamp FROM NOTAMS WHERE fnsid=" + fnsMessage.getFNS_ID());
+					.prepareStatement("SELECT updatedtimestamp FROM fns_notams WHERE fnsid=" + fnsMessage.getFNS_ID());
 
 			ResultSet rset = checkIfNotamIsNewerPreparedStatement.executeQuery();
 
@@ -331,10 +331,10 @@ public class NotamDb {
 		PreparedStatement putMessagePreparedStatement;
 		try {
 			putMessagePreparedStatement = conn.prepareStatement(
-					"DELETE FROM NOTAMS WHERE validtotimestamp AT TIME ZONE 'UTC' < NOW()");
+					"DELETE FROM fns_notams WHERE validtotimestamp AT TIME ZONE 'UTC' < NOW()");
 			int recordsDeleted = putMessagePreparedStatement.executeUpdate();
 
-			putMessagePreparedStatement = conn.prepareStatement("DELETE FROM NOTAMS WHERE status != 'ACTIVE'");
+			putMessagePreparedStatement = conn.prepareStatement("DELETE FROM fns_notams WHERE status != 'ACTIVE'");
 			recordsDeleted = recordsDeleted + putMessagePreparedStatement.executeUpdate();
 
 			putMessagePreparedStatement.close();
@@ -356,7 +356,7 @@ public class NotamDb {
 
 	public List<NotamBean> getAll() {
 		return jdbi.withHandle(handle -> {
-			return handle.createQuery("SELECT * FROM NOTAMS")
+			return handle.createQuery("SELECT * FROM fns_notams")
 					.mapToBean(NotamBean.class)
 					.list();
 		});
@@ -364,7 +364,7 @@ public class NotamDb {
 
 	public List<NotamBean> getByLocation(String location) {
 		return jdbi.withHandle(handle -> {
-			return handle.createQuery("SELECT * FROM NOTAMS WHERE locationDesignator = :location")
+			return handle.createQuery("SELECT * FROM fns_notams WHERE locationDesignator = :location")
 					.bind("location", location)
 					.mapToBean(NotamBean.class)
 					.list();
