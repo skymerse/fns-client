@@ -15,12 +15,8 @@ public class NotamDTO {
     private String icaoLocation;
     private transient String aixmNotamMessage;
     private String icaoMessage;
-    @SerializedName("notam_series")
-    private String notamSeries;
     @SerializedName("notam_number")
-    private long notamNumber;
-    @SerializedName("notam_year")
-    private String notamYear;
+    private String notamNumber;
     private String classification;
 
     private NotamDTO() {}
@@ -57,27 +53,11 @@ public class NotamDTO {
         this.icaoLocation = icaoLocation;
     }
 
-    public String getNotamSeries() {
-        return notamSeries;
-    }
-
-    public long getNotamNumber() {
+    public String getNotamNumber() {
         return notamNumber;
     }
 
-    public String getNotamYear() {
-        return notamYear;
-    }
-
-    public void setNotamYear(String notamYear) {
-        this.notamYear = notamYear;
-    }
-
-    public void setNotamSeries(String notamSeries) {
-        this.notamSeries = notamSeries;
-    }
-
-    public void setNotamNumber(long notamNumber) {
+    public void setNotamNumber(String notamNumber) {
         this.notamNumber = notamNumber;
     }
 
@@ -115,9 +95,7 @@ public class NotamDTO {
                 .status(notamBean.getStatus())
                 .location(notamBean.getLocationdesignator())
                 .icaoLocation(notamBean.getIcaoLocation())
-                .notamSeries(notamBean.getNotamSeries())
                 .notamNumber(notamBean.getNotamNumber())
-                .notamYear(notamBean.getNotamYear())
                 .aixmNotamMessage(notamBean.getAixmnotammessage())
                 .build();
     }
@@ -149,18 +127,8 @@ public class NotamDTO {
             return this;
         }
 
-        public Builder notamSeries(String notamSeries) {
-            notamDTO.setNotamSeries(notamSeries);
-            return this;
-        }
-
-        public Builder notamNumber(long notamNumber) {
+        public Builder notamNumber(String notamNumber) {
             notamDTO.setNotamNumber(notamNumber);
-            return this;
-        }
-
-        public Builder notamYear(String notamYear) {
-            notamDTO.setNotamYear(notamYear);
             return this;
         }
 

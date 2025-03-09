@@ -125,4 +125,23 @@ BEGIN
                   WHERE table_name = 'fns_notams' AND column_name = 'icao_message') THEN
         ALTER TABLE fns_notams ADD COLUMN icao_message text;
     END IF;
+
+    -- Alter notamNumber to be varchar if it exists as bigint
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'fns_notams' AND column_name = 'notam_number' 
+              AND data_type = 'bigint') THEN
+        ALTER TABLE fns_notams ALTER COLUMN notam_number TYPE varchar(12);
+    END IF;
+
+    -- Drop notam_series if it exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'fns_notams' AND column_name = 'notam_series') THEN
+        ALTER TABLE fns_notams DROP COLUMN notam_series;
+    END IF;
+
+    -- Drop notam_year if it exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'fns_notams' AND column_name = 'notam_year') THEN
+        ALTER TABLE fns_notams DROP COLUMN notam_year;
+    END IF;
 END $$;

@@ -20,6 +20,7 @@ import javax.xml.bind.JAXBException;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.Update;
 import org.json.XML;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -324,6 +325,17 @@ public class NotamDb {
 		return false;
 	}
 
+	public int maybeMarkNotamsAsInactive() throws SQLException {
+		return jdbi.withHandle(handle -> {
+			// Mark NOTAMs as EXPIRED if they are past their validity period
+			int expiredByTime = handle.createUpdate("UPDATE " + config.table + 
+				" SET status = 'EXPIRED' WHERE validtotimestamp AT TIME ZONE 'UTC' < NOW() AND status != 'EXPIRED'")
+				.execute();
+
+			return expiredByTime;
+		});
+	}
+
 	public int removeOldNotams() throws SQLException {
 		final Connection conn = getDBConnection();
 		PreparedStatement putMessagePreparedStatement;
@@ -557,10 +569,10 @@ public class NotamDb {
 			String sql = "INSERT INTO " + config.table +
 				" (fnsid, correlationid, issuedtimestamp, storedtimestamp, updatedtimestamp, " +
 				"validfromtimestamp, validtotimestamp, classification, locationdesignator, " +
-				"notamaccountability, notamtext, aixmnotammessage, status, icaolocation, notam_series, notam_number, notam_year, icao_message) " +
+				"notamaccountability, notamtext, aixmnotammessage, status, icaolocation, notam_number, icao_message) " +
 				"VALUES (:fnsid, :correlationid, :issuedtimestamp, :storedtimestamp, :updatedtimestamp, " +
 				":validfromtimestamp, :validtotimestamp, :classification, :locationdesignator, " +
-				":notamaccountability, :notamtext, :aixmnotammessage, :status, :icaolocation, :notam_series, :notam_number, :notam_year, :icao_message) " +
+				":notamaccountability, :notamtext, :aixmnotammessage, :status, :icaolocation, :notam_number, :icao_message) " +
 				"ON CONFLICT (fnsid) DO UPDATE SET " +
 				"correlationid = :correlationid, " +
 				"updatedtimestamp = :updatedtimestamp, " +
@@ -573,9 +585,7 @@ public class NotamDb {
 				"aixmnotammessage = :aixmnotammessage, " +
 				"status = :status, " +
 				"icaolocation = :icaolocation, " +
-				"notam_series = :notam_series, " +
 				"notam_number = :notam_number, " +
-				"notam_year = :notam_year, " +
 				"icao_message = :icao_message";
 
 			handle.createUpdate(sql)
@@ -593,9 +603,7 @@ public class NotamDb {
 				.bindBySqlType("aixmnotammessage", sqlXml, java.sql.Types.SQLXML)
 				.bind("status", fnsMessage.getStatus().toString())
 				.bind("icaolocation", fnsMessage.getIcaoLocation())
-				.bind("notam_series", fnsMessage.getNotamSeries())
 				.bind("notam_number", fnsMessage.getNotamNumber())
-				.bind("notam_year", fnsMessage.getNotamYear())
 				.bind("icao_message", fnsMessage.getIcaoMessage())
 				.execute();
 

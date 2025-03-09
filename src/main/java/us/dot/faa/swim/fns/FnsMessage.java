@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
-import javax.xml.bind.Element;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.JAXBIntrospector;
 import javax.xml.bind.Unmarshaller;
@@ -41,9 +40,7 @@ public class FnsMessage {
 	private Timestamp validToTimestamp;
 	private String classification;
 	private String locationDesignator;
-	private String notamSeries;
-	private long notamNumber;
-	private String notamYear;
+	private String notamNumber;
 	private String notamAccountability;
 	private String notamText;
 	private String aixmNotamMessage;
@@ -130,17 +127,7 @@ public class FnsMessage {
 							this.icaoLocation = eventExtension.getIcaoLocation().getValue().getValue();
 						}
 
-						if (notam.getSeries() != null) {
-							this.notamSeries = notam.getSeries().getValue().getValue();
-						}
-
-						if (notam.getNumber() != null) {
-							this.notamNumber = notam.getNumber().getValue().getValue();
-						}
-
-						if (notam.getYear() != null) {
-							this.notamYear = notam.getYear().getValue().getValue();
-						}
+						this.notamNumber = FnsMessage.formatNotamNumber(notam);
 
 						if (notam.getTranslation() != null) {
 							notam.getTranslation().stream()
@@ -205,6 +192,28 @@ public class FnsMessage {
 			return null;
 		}
 	}
+
+	private static String formatNotamNumber(NOTAMType notam) {
+		String notamSeries = "";
+		String notamNumber = "";
+		String notamYear = "";
+
+		if (notam.getSeries() != null) {
+			notamSeries = notam.getSeries().getValue().getValue();
+		}
+
+		if (notam.getNumber() != null) {
+			long number = notam.getNumber().getValue().getValue();
+			notamNumber = String.format("%04d", number);
+		}
+
+		if (notam.getYear() != null) {
+			String fullYear = notam.getYear().getValue().getValue();
+			notamYear = fullYear.substring(fullYear.length() - 2);
+		}
+
+		return String.join("/", notamSeries + notamNumber, notamYear);
+	}
 	
 	@SuppressWarnings("serial")
 	public class FnsMessageParseException extends Exception
@@ -268,16 +277,8 @@ public class FnsMessage {
 		return this.icaoLocation;
 	}
 
-	public String getNotamSeries() {
-		return this.notamSeries;
-	}
-
-	public long getNotamNumber() {
+	public String getNotamNumber() {
 		return this.notamNumber;
-	}
-
-	public String getNotamYear() {
-		return this.notamYear;
 	}
 
 	public String getIcaoMessage() {

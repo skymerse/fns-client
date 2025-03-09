@@ -71,24 +71,22 @@ public class FnsClient implements ExceptionListener {
 		jmsClient = new JmsClient(config.jmsClientConfig);
 		notamDb = new NotamDb(config.notamDbConfig);
 
-		if (config.removeOldNotams) {
-			final TimerTask removeOldNotamsTimerTask = new TimerTask() {
+		final TimerTask removeOldNotamsTimerTask = new TimerTask() {
 
-				@Override
-				public void run() {
-					try {
-						removeOldNotams();
-					} catch (SQLException e) {
-						throw new RuntimeException(e);
-					}
+			@Override
+			public void run() {
+				try {
+					removeOldNotams();
+				} catch (SQLException e) {
+					throw new RuntimeException(e);
 				}
-			};
-			Timer removeOldNotamsTimer = new Timer(true);
-			long removeNotamScheduleFrequencyInMilliseconds = TimeUnit.MILLISECONDS
-					.convert(config.getRemoveOldNotamsFrequency(), TimeUnit.HOURS);
-			removeOldNotamsTimer.scheduleAtFixedRate(removeOldNotamsTimerTask,
-					removeNotamScheduleFrequencyInMilliseconds, removeNotamScheduleFrequencyInMilliseconds);
-		}
+			}
+		};
+		Timer removeOldNotamsTimer = new Timer(true);
+		long removeNotamScheduleFrequencyInMilliseconds = TimeUnit.MILLISECONDS
+				.convert(config.getRemoveOldNotamsFrequency(), TimeUnit.HOURS);
+		removeOldNotamsTimer.scheduleAtFixedRate(removeOldNotamsTimerTask,
+				removeNotamScheduleFrequencyInMilliseconds, removeNotamScheduleFrequencyInMilliseconds);
 
 		missedMessageTracker = createMissedMessagTracker();
 		fnsJmsMessageWorker = new FnsJmsMessageWorker(notamDb, pendingJmsMessages);
@@ -108,7 +106,7 @@ public class FnsClient implements ExceptionListener {
 				logger.warn("Missed Message(s) Identified | Missed Messages " + cachedCorellationIds);
 
 				this.clearOnlyMissedMessages();
-				
+
 				if (notamDb.isValid()) {
 					try {
 						logger.info("Setting NotamDb to Invalid and ReInitalizing from FNS Initial Load");
@@ -120,7 +118,7 @@ public class FnsClient implements ExceptionListener {
 				} else if (notamDb.isInitializing()) {
 					missedMessageDuringInitialization = true;
 				}
-				
+
 			}
 
 			@Override
@@ -165,7 +163,7 @@ public class FnsClient implements ExceptionListener {
 		logger.info("JMS Consumer Started");
 	}
 
-	private void initalizeNotamDbFromFil() {		
+	private void initalizeNotamDbFromFil() {
 		boolean successful = false;
 		while (!successful) {
 			logger.info("Initalizing Database");
@@ -197,36 +195,37 @@ public class FnsClient implements ExceptionListener {
 					filFileInputStream = filClient.getFnsInitialLoad(refDate);
 					final int notamCount = loadNotams(filFileInputStream);
 
-					if (!this.missedMessageDuringInitialization) {						
+					if (!this.missedMessageDuringInitialization) {
 						logger.info("Loaded " + notamCount + " Notams");
 
 						loadQueuedMessages();
 
 						notamDb.setValid();
-						logger.info("NotamDb initalized");	
+						logger.info("NotamDb initalized");
 						successful = true;
 					} else {
 						pendingJmsMessages.clear();
-						logger.error("NotamDb initalization failed due to missed message identified during initalization process.");							
+						logger.error(
+								"NotamDb initalization failed due to missed message identified during initalization process.");
 					}
 				} catch (SQLException | IOException | SAXException | ParserConfigurationException sqle) {
-					logger.error("NotamDb initalization failed due to:" + sqle);	
+					logger.error("NotamDb initalization failed due to:" + sqle);
 				} finally {
 					notamDb.setInitializing(false);
-					try {						
+					try {
 						if (filFileInputStream != null) {
 							filFileInputStream.close();
 						}
 					} catch (IOException ioe) {
 						logger.error(ioe.getMessage(), ioe);
 					}
-				}				
+				}
 			} catch (Exception e) {
 				logger.error("Failed to Initialized NotamDb due to: " + e.getMessage(), e);
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e1) {
-					logger.warn("Thread interupded");					
+					logger.warn("Thread interupded");
 				}
 			} finally {
 				filClient.close();
@@ -377,11 +376,11 @@ public class FnsClient implements ExceptionListener {
 	public void stop() {
 		logger.info("Stopping FnsClient");
 		removeOldNotamsTimer.cancel();
-		
-		if(missedMessageTracker != null){
+
+		if (missedMessageTracker != null) {
 			missedMessageTracker.stop();
 		}
-		
+
 		if (jmsClient != null) {
 			logger.info("Destroying JmsClient");
 			try {
@@ -401,7 +400,7 @@ public class FnsClient implements ExceptionListener {
 		logger.info("Removing old NOTAMS from database");
 		int notamsRemoved = 0;
 		try {
-			notamsRemoved = notamDb.removeOldNotams();
+			notamsRemoved = notamDb.maybeMarkNotamsAsInactive();
 			logger.info("Removed " + notamsRemoved + " Notams");
 			return notamsRemoved;
 		} catch (final SQLException e) {
