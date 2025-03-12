@@ -48,7 +48,10 @@ public class FnsMessage {
 	private String icaoMessage;
 
 	public enum NotamStatus {
-		ACTIVE, CANCELLED, EXPIRED
+		ACTIVE,
+		CANCELLED,
+		EXPIRED,
+		INACTIVE // notam is not active, but it's not known if it's cancelled or expired.
 	};
 
 	private NotamStatus status;

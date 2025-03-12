@@ -10,4 +10,4 @@
    1. [ ] Deploy to separate database
 6. [ ] Cleanup database name setting
 7. [ ] Update README to reflect current state
-8. [ ] Invalid DB mark old notams as expired
+8. [x] Invalid DB mark old notams as expired

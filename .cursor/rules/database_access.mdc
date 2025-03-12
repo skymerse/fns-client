@@ -1,0 +1,9 @@
+---
+description: Database interface rules
+globs: src/main/java/us/dot/faa/swim/fns/notamdb/NotamDb.java
+alwaysApply: false
+---
+ # Guidelines
+
+ - Use JDBI interface
+ - Any changes to schema must be camptured in [migration.sql](mdc:src/main/resources/migration.sql) which is a idempotent migration file run on server startup

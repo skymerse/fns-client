@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +43,7 @@ import us.dot.faa.swim.fns.fil.FilClient;
 import us.dot.faa.swim.fns.fil.FilParser;
 import us.dot.faa.swim.fns.fil.FilParserWorker;
 import us.dot.faa.swim.fns.jms.FnsJmsMessageWorker;
+import us.dot.faa.swim.fns.notamdb.NotamBean;
 import us.dot.faa.swim.fns.notamdb.NotamDb;
 import us.dot.faa.swim.fns.rest.FnsRestApi;
 import us.dot.faa.swim.jms.JmsClient;
@@ -250,9 +252,13 @@ public class FnsClient implements ExceptionListener {
 	}
 
 	private int loadNotams(InputStream inputStream) throws Exception {
-
+		logger.info("Starting loadNotams...");
+		long startTime = System.currentTimeMillis();
+		
 		notamDb.setInitializing(true);
 		AtomicInteger notamCount = new AtomicInteger();
+		// Get all active notam ids from the database
+		Set<Integer> activeNotamIds = notamDb.getActiveNotamIds();
 
 		final FilParser parser = new FilParser(config.getFilParserThreadCount(), config.getFilParserMaxWorkQueueSize());
 		parser.parseFilFile(inputStream, new FilParserWorker() {
@@ -263,9 +269,11 @@ public class FnsClient implements ExceptionListener {
 				try {
 					final FnsMessage fnsMessage = new FnsMessage((long) -1, aixmMessage);
 					fnsMessage.setStatus(NotamStatus.ACTIVE);
-					notamDb.putNotam(fnsMessage);
+					final NotamBean notamBean = notamDb.putNotam(fnsMessage);
 					notamCount.incrementAndGet();
 
+					// FIL contains only active notams, so remove the notam from the active set
+					activeNotamIds.remove(notamBean.getFnsid());
 				} catch (FnsMessageParseException | SQLException e) {
 					throw new RuntimeException(e);
 				}
@@ -273,6 +281,15 @@ public class FnsClient implements ExceptionListener {
 		});
 
 		notamDb.setInitializing(false);
+
+		// If there are any notams that are still active, mark them as inactive.
+		if (!activeNotamIds.isEmpty()) {
+			notamDb.markNotamsAsInactive(activeNotamIds.stream().collect(Collectors.toList()));
+		}
+
+		long endTime = System.currentTimeMillis();
+		long duration = endTime - startTime;
+		logger.info("loadNotams completed in {} ms, processed {} notams", duration, notamCount.get());
 
 		return notamCount.get();
 	}

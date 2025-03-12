@@ -15,12 +15,13 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.statement.Update;
 import org.json.XML;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,13 +158,30 @@ public class NotamDb {
 		}
 	}
 
-	public void putNotam(final FnsMessage fnsMessage) throws SQLException {
+	public NotamBean putNotam(final FnsMessage fnsMessage) throws SQLException {
 		try {
-			putNotamJdbi(fnsMessage);
+			return putNotamJdbi(fnsMessage);
 		} catch (SQLException e) {
 			isValid = false;
 			throw e;
 		}
+	}
+
+	public Integer markNotamsAsInactive(List<Integer> activeNotamIds) throws SQLException {
+		return jdbi.withHandle(handle -> {
+			return handle.createUpdate("UPDATE " + this.config.table + " SET status = 'INACTIVE' WHERE fnsid IN (<notamIds>)")
+				.bindList("notamIds", activeNotamIds)
+				.execute();
+		});
+	}
+
+	public Set<Integer> getActiveNotamIds() throws SQLException {
+		return jdbi.withHandle(handle -> {
+			return handle.createQuery("SELECT fnsid FROM " + this.config.table + " WHERE status = 'ACTIVE'")
+				.map((rs, ctx) -> {
+					return rs.getInt("fnsid");
+				}).collect(Collectors.toSet());
+		});
 	}
 
 	public void putBulkNotam(List<FnsMessage> fnsMessageList) throws SQLException {
